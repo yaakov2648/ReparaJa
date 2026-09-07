@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateCommission, getActiveCommissionTiers } from "@/lib/commission";
+import { paymentService } from "@/lib/payments";
 
 export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
   const session = await getSession();
@@ -50,5 +51,12 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id
     });
   });
 
-  return NextResponse.json({ job });
+  // Cria já o "pagamento" (simulado) associado ao trabalho, para o cliente
+  // poder avançar no ecrã — nada aqui move dinheiro real.
+  const payment = await paymentService.createPayment({
+    jobId: job.id,
+    amount: Number(job.agreedTotal),
+  });
+
+  return NextResponse.json({ job, payment });
 }

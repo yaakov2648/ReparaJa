@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireUser } from "@/lib/require-user";
 import { prisma } from "@/lib/prisma";
 import { Topbar } from "@/components/Topbar";
@@ -115,9 +116,12 @@ export default async function PedidoDetalhePage({
                 </div>
               )}
               {q.job && (
-                <p className="mt-3 rounded-lg bg-orange-soft px-3 py-2 text-sm text-orange">
-                  Trabalho contratado — aguarda implementação do pagamento (Fase 3).
-                </p>
+                <Link
+                  href={`/cliente/trabalhos/${q.job.id}`}
+                  className="mt-3 block rounded-lg bg-orange-soft px-3 py-2 text-sm font-semibold text-orange"
+                >
+                  Trabalho contratado → ver estado do pagamento (simulado)
+                </Link>
               )}
             </div>
           ))}

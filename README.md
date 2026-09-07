@@ -32,7 +32,14 @@ aplicação real).
       para acrescentar logo a linha, preenche quantidade/preço e envia — sem
       escrever tudo de raiz. Todos os totais (linha, subtotal, IVA, comissão)
       são recalculados no servidor, nunca confiando no valor vindo do cliente.
-- [ ] Fase 3 — pagamentos via Stripe Connect (`PaymentService`).
+- [x] Fase 3 — camada `PaymentService` com fluxo de pagamento e payout
+      **totalmente simulados** (`src/lib/payments`). O cliente "paga" e
+      confirma a conclusão do trabalho, o profissional "recebe" o valor
+      líquido — mas nada disto liga a um processador real. Cada ecrã com
+      dinheiro envolvido mostra um aviso "MODO SIMULADO" e cada registo na
+      BD fica com `provider: "mock"`. Trocar para Stripe Connect no futuro é
+      só escrever uma nova implementação de `PaymentService` — o resto da
+      app não muda.
 - [ ] Fase 4 — chat persistente com deteção de contactos externos.
 - [ ] Fase 5 — disputas, avaliações reais, "A Minha Casa", métricas.
 

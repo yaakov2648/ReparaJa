@@ -34,6 +34,12 @@ export default async function ProfissionalDashboard() {
           >
             Os teus orçamentos
           </Link>
+          <Link
+            href="/profissional/trabalhos"
+            className="rounded-lg border border-border bg-surface px-5 py-2.5 font-semibold"
+          >
+            Trabalhos contratados
+          </Link>
         </div>
       </main>
     </div>

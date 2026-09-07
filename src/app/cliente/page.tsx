@@ -34,9 +34,12 @@ export default async function ClienteDashboard() {
           </Link>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap gap-4">
           <Link href="/cliente/pedidos" className="font-semibold text-orange">
             Ver todos os teus pedidos →
+          </Link>
+          <Link href="/cliente/trabalhos" className="font-semibold text-orange">
+            Os teus trabalhos →
           </Link>
         </div>
       </main>

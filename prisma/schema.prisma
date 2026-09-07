@@ -1,7 +1,9 @@
 // Prisma schema — ReparaJá
 // Fase 1: utilizadores, autenticação e escalões de comissão.
 // Fase 2: pedidos, orçamentos com linhas e trabalhos contratados.
-// Pagamentos, chat e disputas entram nas fases seguintes.
+// Fase 3: pagamentos — APENAS SIMULADOS (provider "mock"). Não há nenhuma
+// integração real com Stripe ou outro processador. Ver src/lib/payments.
+// Chat e disputas entram nas fases seguintes.
 
 generator client {
   provider = "prisma-client"
@@ -35,6 +37,7 @@ model User {
   quotes           Quote[]          @relation("ProfessionalQuotes")
   jobsAsClient     Job[]            @relation("ClientJobs")
   jobsAsProfessional Job[]          @relation("ProfessionalJobs")
+  payouts          Payout[]
 
   @@map("users")
 }
@@ -217,5 +220,59 @@ model Job {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  payment Payment?
+  payout  Payout?
+
   @@map("jobs")
+}
+
+enum PaymentStatus {
+  PENDENTE
+  CONFIRMADO
+  FALHADO
+  REEMBOLSADO
+}
+
+// Pagamento do cliente associado a um trabalho. `provider` identifica quem
+// processou — hoje é sempre "mock" (ver src/lib/payments/mock-provider.ts).
+// Não existe nenhuma integração real: confirmar/falhar aqui é uma ação
+// manual no ecrã a simular o que seria um webhook do processador real.
+model Payment {
+  id                String        @id @default(cuid())
+  jobId             String        @unique
+  job               Job           @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  amount            Decimal       @db.Decimal(12, 2)
+  provider          String        @default("mock")
+  providerReference String?
+  status            PaymentStatus @default(PENDENTE)
+  createdAt         DateTime      @default(now())
+  confirmedAt       DateTime?
+  failedAt          DateTime?
+
+  @@map("payments")
+}
+
+enum PayoutStatus {
+  PENDENTE
+  LIBERTADO
+  FALHADO
+}
+
+// Transferência simulada ao profissional, criada quando o cliente confirma
+// a conclusão do trabalho. `amount` é sempre agreedTotal - commissionAmount,
+// nunca recalculado à parte.
+model Payout {
+  id                String       @id @default(cuid())
+  jobId             String       @unique
+  job               Job          @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  professionalId    String
+  professional      User         @relation(fields: [professionalId], references: [id], onDelete: Restrict)
+  amount            Decimal      @db.Decimal(12, 2)
+  provider          String       @default("mock")
+  providerReference String?
+  status            PayoutStatus @default(PENDENTE)
+  createdAt         DateTime     @default(now())
+  releasedAt        DateTime?
+
+  @@map("payouts")
 }
