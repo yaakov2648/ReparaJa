@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/require-user";
 import { prisma } from "@/lib/prisma";
 import { Topbar } from "@/components/Topbar";
 import { labelFor, SERVICE_CATEGORIES } from "@/lib/constants";
+import { StartConversationButton } from "@/components/StartConversationButton";
 
 export default async function PedidosNovosPage() {
   const user = await requireUser("PROFISSIONAL");
@@ -50,12 +51,15 @@ export default async function PedidosNovosPage() {
                     </span>
                   )}
                 </div>
-                <Link
-                  href={`/profissional/pedidos/${r.id}/orcamento`}
-                  className="mt-3 inline-block rounded-lg bg-orange px-4 py-2 text-sm font-semibold text-white"
-                >
-                  {hasQuoted ? "Enviar novo orçamento" : "Criar orçamento →"}
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/profissional/pedidos/${r.id}/orcamento`}
+                    className="mt-3 inline-block rounded-lg bg-orange px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    {hasQuoted ? "Enviar novo orçamento" : "Criar orçamento →"}
+                  </Link>
+                  <StartConversationButton requestId={r.id} />
+                </div>
               </div>
             );
           })}

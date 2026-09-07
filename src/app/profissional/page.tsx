@@ -40,6 +40,12 @@ export default async function ProfissionalDashboard() {
           >
             Trabalhos contratados
           </Link>
+          <Link
+            href="/profissional/mensagens"
+            className="rounded-lg border border-border bg-surface px-5 py-2.5 font-semibold"
+          >
+            Mensagens
+          </Link>
         </div>
       </main>
     </div>

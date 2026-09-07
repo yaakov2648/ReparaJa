@@ -3,7 +3,8 @@
 // Fase 2: pedidos, orçamentos com linhas e trabalhos contratados.
 // Fase 3: pagamentos — APENAS SIMULADOS (provider "mock"). Não há nenhuma
 // integração real com Stripe ou outro processador. Ver src/lib/payments.
-// Chat e disputas entram nas fases seguintes.
+// Fase 4: chat com deteção de contactos externos.
+// Disputas entram numa fase seguinte.
 
 generator client {
   provider = "prisma-client"
@@ -38,6 +39,10 @@ model User {
   jobsAsClient     Job[]            @relation("ClientJobs")
   jobsAsProfessional Job[]          @relation("ProfessionalJobs")
   payouts          Payout[]
+
+  conversationsAsClient       Conversation[] @relation("ClientConversations")
+  conversationsAsProfessional Conversation[] @relation("ProfessionalConversations")
+  messages                    Message[]
 
   @@map("users")
 }
@@ -123,8 +128,9 @@ model ServiceRequest {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  quotes Quote[]
-  jobs   Job[]
+  quotes        Quote[]
+  jobs          Job[]
+  conversations Conversation[]
 
   @@map("service_requests")
 }
@@ -283,4 +289,70 @@ model Payout {
   releasedAt        DateTime?
 
   @@map("payouts")
+}
+
+// Uma conversa por par (pedido, profissional) — o cliente é sempre o dono
+// do pedido. Continua a mesma conversa antes e depois da contratação; a UI
+// é que muda o contexto mostrado ("Pedido" -> "Trabalho") consoante exista
+// ou não um Job para este par. Nunca se cria uma segunda conversa para o
+// mesmo par: histórico completo fica sempre no mesmo sítio.
+model Conversation {
+  id             String   @id @default(cuid())
+  requestId      String
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         User     @relation("ClientConversations", fields: [clientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User     @relation("ProfessionalConversations", fields: [professionalId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  lastMessageAt  DateTime @default(now())
+
+  messages Message[]
+
+  @@unique([requestId, professionalId])
+  @@index([clientId])
+  @@index([professionalId])
+  @@map("conversations")
+}
+
+enum MessageKind {
+  TEXT
+  SYSTEM
+}
+
+// Mensagens de sistema (kind=SYSTEM, senderId=null) criam o histórico
+// cronológico auditável da contratação — inseridas automaticamente pelo
+// backend nos pontos-chave (orçamento enviado/aceite/recusado, pagamento
+// confirmado/falhado, trabalho concluído). Nunca incluem valores de
+// comissão: a conversa é partilhada pelas duas partes, e o cliente não
+// pode saber a comissão (ver src/lib/serialize.ts).
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?
+  sender         User?        @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  kind           MessageKind  @default(TEXT)
+  body           String?
+  systemType     String?
+  systemPayload  Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// Registo mínimo de tentativas de partilha de contacto externo bloqueadas
+// (ver src/lib/contact-detection.ts) — só o tipo de padrão, nunca o texto
+// bloqueado, para não guardar números/emails de terceiros sem necessidade.
+// Serve de base para a métrica "tentativas de partilha de contactos
+// externos" (Fase 5).
+model ContactAttemptLog {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  patternType    String
+  createdAt      DateTime @default(now())
+
+  @@map("contact_attempt_logs")
 }

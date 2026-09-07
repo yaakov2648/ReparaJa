@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createQuoteSchema } from "@/lib/validation/quotes";
 import type { QuoteItemType } from "@/generated/prisma/enums";
+import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
+import { formatEUR } from "@/lib/format";
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -73,6 +75,14 @@ export async function POST(request: Request, ctx: RouteContext<"/api/requests/[i
     },
     include: { items: { orderBy: { position: "asc" } } },
   });
+
+  const conversation = await getOrCreateConversation(requestId, session.sub);
+  await insertSystemMessage(
+    conversation.id,
+    `Novo orçamento enviado: ${formatEUR(total)}`,
+    "QUOTE_SENT",
+    { quoteId: quote.id, total }
+  );
 
   return NextResponse.json({ quote }, { status: 201 });
 }

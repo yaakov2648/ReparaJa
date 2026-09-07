@@ -37,6 +37,12 @@ export default async function PedidoDetalhePage({
   });
   if (!serviceRequest || serviceRequest.clientId !== user.id) notFound();
 
+  const conversations = await prisma.conversation.findMany({
+    where: { requestId: id },
+    select: { id: true, professionalId: true },
+  });
+  const conversationByProfessional = new Map(conversations.map((c) => [c.professionalId, c.id]));
+
   return (
     <div className="min-h-screen bg-background">
       <Topbar name={user.name} />
@@ -110,11 +116,19 @@ export default async function PedidoDetalhePage({
 
               {q.notes && <p className="mt-2 text-sm italic text-text-2">&ldquo;{q.notes}&rdquo;</p>}
 
-              {q.status === "ENVIADO" && serviceRequest.status === "ABERTO" && (
-                <div className="mt-3">
+              <div className="mt-3 flex flex-wrap gap-2">
+                {q.status === "ENVIADO" && serviceRequest.status === "ABERTO" && (
                   <QuoteActions quoteId={q.id} />
-                </div>
-              )}
+                )}
+                {conversationByProfessional.has(q.professionalId) && (
+                  <Link
+                    href={`/cliente/mensagens/${conversationByProfessional.get(q.professionalId)}`}
+                    className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold"
+                  >
+                    Conversar
+                  </Link>
+                )}
+              </div>
               {q.job && (
                 <Link
                   href={`/cliente/trabalhos/${q.job.id}`}

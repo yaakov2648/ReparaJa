@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentService } from "@/lib/payments";
 import { toClientSafeJob } from "@/lib/serialize";
+import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
 
 // O cliente confirma que o trabalho foi concluído. Isto liberta o payout
 // (simulado) ao profissional — no mundo real, com Stripe Connect, esta seria
@@ -34,6 +35,13 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/jobs/[id]/
     amount: payoutAmount,
   });
   await paymentService.releasePayout(payout.id);
+
+  const conversation = await getOrCreateConversation(job.requestId, job.professionalId);
+  await insertSystemMessage(
+    conversation.id,
+    "O cliente confirmou a conclusão do trabalho.",
+    "JOB_COMPLETED"
+  );
 
   // Cliente nunca vê a comissão nem o valor líquido do profissional (dá para
   // deduzir a comissão por subtração) — só a confirmação de que concluiu.

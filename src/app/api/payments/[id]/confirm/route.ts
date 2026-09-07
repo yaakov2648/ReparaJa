@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentService } from "@/lib/payments";
+import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
 
 // Simula a aprovação do pagamento (no mundo real seria um webhook do
 // processador). Só o cliente dono do trabalho pode acionar esta simulação.
@@ -24,5 +25,16 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/payments/[
   }
 
   const updated = await paymentService.confirmPayment(paymentId);
+
+  const conversation = await getOrCreateConversation(
+    payment.job.requestId,
+    payment.job.professionalId
+  );
+  await insertSystemMessage(
+    conversation.id,
+    "Pagamento confirmado (simulado). O trabalho está agora em curso.",
+    "PAYMENT_CONFIRMED"
+  );
+
   return NextResponse.json({ payment: updated });
 }

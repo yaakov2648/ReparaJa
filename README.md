@@ -40,8 +40,23 @@ aplicação real).
       BD fica com `provider: "mock"`. Trocar para Stripe Connect no futuro é
       só escrever uma nova implementação de `PaymentService` — o resto da
       app não muda.
-- [ ] Fase 4 — chat persistente com deteção de contactos externos.
+- [x] Fase 4 — chat persistente com deteção de contactos externos. Uma
+      conversa por par (pedido, profissional), com histórico cronológico
+      auditável: o backend insere automaticamente eventos de sistema
+      (orçamento enviado/aceite/recusado, pagamento confirmado/falhado,
+      trabalho concluído) na mesma conversa que as mensagens normais.
+      Deteção de telefone/email/URL/apps de mensagens/frases de "combinar
+      fora da plataforma" corre sempre no servidor (`src/lib/contact-detection.ts`)
+      — nunca só no frontend — e bloqueia o envio com uma mensagem clara,
+      sem apagar o que o utilizador escreveu.
 - [ ] Fase 5 — disputas, avaliações reais, "A Minha Casa", métricas.
+
+### Modo escuro/claro
+
+Toggle manual no Topbar (persistido em localStorage, com fallback ao tema do
+sistema na primeira visita). A paleta usa tokens CSS semânticos, por isso
+tematizar é só redefinir esses tokens sob `:root.dark` — não é preciso
+prefixar `dark:` em cada componente.
 
 ### Extra: mapa "profissionais perto de ti"
 
@@ -71,3 +86,8 @@ que dava para deduzir a comissão por subtração ao valor total.
 - O mapa e a geocodificação dependem de acesso à Internet em runtime
   (tiles do OpenStreetMap e Nominatim) — não têm chave de API, mas também
   não têm SLA. Para produção com volume, considerar um serviço pago.
+- A deteção de contactos externos usa um limiar de 9+ dígitos para
+  identificar números de telefone — por isso também apanha NIF ou IBAN
+  partilhados no chat (ex: para efeitos de fatura). É uma limitação
+  conhecida e aceite para já; sem mais contexto na mensagem não há forma
+  simples de distinguir isso de um telefone.

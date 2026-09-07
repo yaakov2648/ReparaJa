@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentService } from "@/lib/payments";
+import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
 
 // Simula uma recusa de pagamento, para demonstrar o caminho de falha do
 // fluxo. O trabalho fica AGUARDA_PAGAMENTO — o cliente pode tentar de novo
@@ -26,5 +27,12 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/payments/[
   }
 
   const updated = await paymentService.failPayment(paymentId);
+
+  const conversation = await getOrCreateConversation(
+    payment.job.requestId,
+    payment.job.professionalId
+  );
+  await insertSystemMessage(conversation.id, "O pagamento simulado falhou.", "PAYMENT_FAILED");
+
   return NextResponse.json({ payment: updated });
 }

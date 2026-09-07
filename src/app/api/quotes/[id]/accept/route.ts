@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { calculateCommission, getActiveCommissionTiers } from "@/lib/commission";
 import { paymentService } from "@/lib/payments";
 import { toClientSafeJob } from "@/lib/serialize";
+import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
+import { formatEUR } from "@/lib/format";
 
 export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
   const session = await getSession();
@@ -30,6 +32,11 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id
   // A comissão incide sobre o valor líquido do trabalho (subtotal - desconto),
   // antes de IVA — nunca sobre o total pago pelo cliente.
   const commission = calculateCommission(Number(quote.taxableBase), tiers);
+
+  const otherQuotes = await prisma.quote.findMany({
+    where: { requestId: quote.requestId, id: { not: quote.id }, status: "ENVIADO" },
+    select: { professionalId: true },
+  });
 
   const job = await prisma.$transaction(async (tx) => {
     await tx.quote.update({ where: { id: quote.id }, data: { status: "ACEITE" } });
@@ -58,6 +65,22 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id
     jobId: job.id,
     amount: Number(job.agreedTotal),
   });
+
+  const wonConversation = await getOrCreateConversation(quote.requestId, quote.professionalId);
+  await insertSystemMessage(
+    wonConversation.id,
+    `Orçamento aceite: ${formatEUR(quote.total.toString())}`,
+    "QUOTE_ACCEPTED",
+    { quoteId: quote.id }
+  );
+  for (const other of otherQuotes) {
+    const conv = await getOrCreateConversation(quote.requestId, other.professionalId);
+    await insertSystemMessage(
+      conv.id,
+      "O cliente optou por outro profissional para este pedido.",
+      "QUOTE_AUTO_REJECTED"
+    );
+  }
 
   // Esta rota só é chamada pelo cliente — a comissão nunca vai no corpo
   // da resposta, mesmo que a UI atual não a mostre (a aba de rede do

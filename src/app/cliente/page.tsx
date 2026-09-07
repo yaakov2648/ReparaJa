@@ -44,6 +44,9 @@ export default async function ClienteDashboard() {
           <Link href="/cliente/mapa" className="font-semibold text-orange">
             Profissionais perto de ti →
           </Link>
+          <Link href="/cliente/mensagens" className="font-semibold text-orange">
+            Mensagens →
+          </Link>
         </div>
       </main>
     </div>
