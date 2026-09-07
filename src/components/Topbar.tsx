@@ -1,4 +1,5 @@
 import { LogoutButton } from "@/components/LogoutButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Topbar({ name }: { name: string }) {
   const initials = name
@@ -21,6 +22,7 @@ export function Topbar({ name }: { name: string }) {
           </div>
           <span className="text-sm font-medium">{name}</span>
         </div>
+        <ThemeToggle />
         <LogoutButton />
       </div>
     </header>
