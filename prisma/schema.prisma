@@ -54,6 +54,14 @@ model ProfessionalProfile {
   verified           Boolean   @default(false)
   stripeAccountId    String?
   stripeOnboardedAt  DateTime?
+
+  // Coordenadas aproximadas para o mapa "profissionais perto de si".
+  // Preenchidas por geocodificação best-effort a partir de `location`
+  // (ver src/lib/geocoding.ts) — podem ficar a null se a geocodificação
+  // falhar ou o profissional não tiver indicado localização.
+  latitude           Float?
+  longitude          Float?
+
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

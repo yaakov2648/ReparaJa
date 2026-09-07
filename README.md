@@ -43,10 +43,31 @@ aplicação real).
 - [ ] Fase 4 — chat persistente com deteção de contactos externos.
 - [ ] Fase 5 — disputas, avaliações reais, "A Minha Casa", métricas.
 
+### Extra: mapa "profissionais perto de ti"
+
+Página `/cliente/mapa` com Leaflet + OpenStreetMap (sem chave de API). O
+cliente pesquisa uma zona ou usa a localização do navegador; os profissionais
+mostrados vêm de `ProfessionalProfile.latitude/longitude`, preenchidas por
+geocodificação best-effort (Nominatim) da localização indicada no registo —
+corre depois de responder ao pedido (`after()` do Next.js), nunca bloqueia o
+registo. Se a geocodificação falhar, o profissional só não aparece no mapa.
+Categorias e nº de trabalhos concluídos mostrados vêm de dados reais
+(orçamentos aceites e trabalhos concluídos), nunca inventados.
+
+## Comissão: visibilidade por papel
+
+A comissão ReparaJá só é visível ao **profissional**. O cliente nunca a vê —
+nem no ecrã nem no JSON devolvido pelas rotas que ele chama (`toClientSafeJob`
+em `src/lib/serialize.ts` remove os campos de comissão antes de responder).
+Isto inclui também não expor o valor líquido do profissional ao cliente, já
+que dava para deduzir a comissão por subtração ao valor total.
+
 ## Notas importantes
 
-- Não existe nenhuma simulação de pagamento ou "garantia"/escrow no código —
-  isso só será implementado quando a integração Stripe Connect estiver
-  realmente ligada (Fase 3).
+- Não existe nenhuma simulação de pagamento ou "garantia"/escrow real — só o
+  fluxo simulado descrito na Fase 3.
 - Os escalões de comissão vivem na tabela `commission_tiers`, não estão
   hardcoded no código.
+- O mapa e a geocodificação dependem de acesso à Internet em runtime
+  (tiles do OpenStreetMap e Nominatim) — não têm chave de API, mas também
+  não têm SLA. Para produção com volume, considerar um serviço pago.

@@ -81,20 +81,10 @@ export default async function TrabalhoDetalhePage({
 
         {job.status === "CONCLUIDO" && job.payout && (
           <div className="mt-4 rounded-xl bg-surface p-4 shadow-sm">
-            <SimulatedBanner text="Trabalho concluído e payout simulado ao profissional." />
-            <div className="mt-3 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-2">Valor do trabalho</span>
-                <span>{formatEUR(job.agreedTotal.toString())}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">Comissão ReparaJá</span>
-                <span>-{formatEUR(job.commissionAmount.toString())}</span>
-              </div>
-              <div className="flex justify-between font-semibold">
-                <span>Valor pago ao profissional</span>
-                <span>{formatEUR(job.payout.amount.toString())}</span>
-              </div>
+            <SimulatedBanner text="Trabalho concluído e pagamento processado ao profissional." />
+            <div className="mt-3 flex justify-between text-sm font-semibold">
+              <span>Total pago</span>
+              <span>{formatEUR(job.agreedTotal.toString())}</span>
             </div>
           </div>
         )}

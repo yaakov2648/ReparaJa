@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateCommission, getActiveCommissionTiers } from "@/lib/commission";
 import { paymentService } from "@/lib/payments";
+import { toClientSafeJob } from "@/lib/serialize";
 
 export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
   const session = await getSession();
@@ -58,5 +59,8 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id
     amount: Number(job.agreedTotal),
   });
 
-  return NextResponse.json({ job, payment });
+  // Esta rota só é chamada pelo cliente — a comissão nunca vai no corpo
+  // da resposta, mesmo que a UI atual não a mostre (a aba de rede do
+  // browser mostraria o JSON na mesma).
+  return NextResponse.json({ job: toClientSafeJob(job), payment });
 }

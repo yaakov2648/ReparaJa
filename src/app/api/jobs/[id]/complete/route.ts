@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentService } from "@/lib/payments";
+import { toClientSafeJob } from "@/lib/serialize";
 
 // O cliente confirma que o trabalho foi concluído. Isto liberta o payout
 // (simulado) ao profissional — no mundo real, com Stripe Connect, esta seria
@@ -32,7 +33,9 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/jobs/[id]/
     professionalId: job.professionalId,
     amount: payoutAmount,
   });
-  const releasedPayout = await paymentService.releasePayout(payout.id);
+  await paymentService.releasePayout(payout.id);
 
-  return NextResponse.json({ job: updatedJob, payout: releasedPayout });
+  // Cliente nunca vê a comissão nem o valor líquido do profissional (dá para
+  // deduzir a comissão por subtração) — só a confirmação de que concluiu.
+  return NextResponse.json({ job: toClientSafeJob(updatedJob) });
 }
