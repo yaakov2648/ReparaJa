@@ -1,0 +1,65 @@
+// Prisma schema — ReparaJá
+// Fase 1: utilizadores, autenticação e escalões de comissão.
+// As restantes entidades (jobs, quotes, payments, chat, disputes) entram nas fases seguintes.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENTE
+  PROFISSIONAL
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         UserRole
+  location     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  professionalProfile ProfessionalProfile?
+
+  @@map("users")
+}
+
+// Dados específicos de quem presta serviços. Campos de Stripe Connect e
+// verificação (KYC/KYB) ficam como placeholders para a Fase 3 — nada aqui
+// simula onboarding ou verificação real.
+model ProfessionalProfile {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                String?
+  specialties         String[]  @default([])
+  verified           Boolean   @default(false)
+  stripeAccountId    String?
+  stripeOnboardedAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("professional_profiles")
+}
+
+// Escalões de comissão progressiva. Configuráveis, nunca hardcoded no código.
+// applicableUpTo = null significa "sem limite superior" (último escalão).
+model CommissionTier {
+  id             String    @id @default(cuid())
+  applicableFrom Decimal   @db.Decimal(12, 2)
+  applicableUpTo Decimal?  @db.Decimal(12, 2)
+  rate           Decimal   @db.Decimal(5, 4) // ex: 0.10 = 10%
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  @@map("commission_tiers")
+}
