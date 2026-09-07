@@ -10,7 +10,19 @@ export async function requireUser(role?: UserRole) {
   }
   const user = await prisma.user.findUnique({
     where: { id: session.sub },
-    select: { id: true, name: true, email: true, role: true, phone: true, location: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      phone: true,
+      location: true,
+      billingName: true,
+      billingNif: true,
+      billingAddress: true,
+      billingPostalCode: true,
+      billingCity: true,
+    },
   });
   if (!user) {
     redirect("/entrar");

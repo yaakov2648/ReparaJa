@@ -88,6 +88,21 @@ export default async function TrabalhoDetalhePage({
             </div>
           </div>
         )}
+
+        <div className="mt-4 rounded-xl bg-surface p-4 shadow-sm">
+          <h2 className="font-semibold">Faturação</h2>
+          {job.wantsInvoice ? (
+            <div className="mt-2 space-y-0.5 text-sm text-text-2">
+              <p>{job.billingName}</p>
+              <p>NIF {job.billingNif}</p>
+              <p>
+                {job.billingAddress}, {job.billingPostalCode} {job.billingCity}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-text-2">Não pediste fatura para este trabalho.</p>
+          )}
+        </div>
       </main>
     </div>
   );

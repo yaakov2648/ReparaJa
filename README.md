@@ -58,6 +58,18 @@ sistema na primeira visita). A paleta usa tokens CSS semânticos, por isso
 tematizar é só redefinir esses tokens sob `:root.dark` — não é preciso
 prefixar `dark:` em cada componente.
 
+### Extra: pedido de fatura ao aceitar orçamento
+
+Ao aceitar um orçamento, o cliente escolhe se quer fatura. Se sim, preenche
+nome/firma, NIF (validado com o dígito de controlo real, não só o formato),
+morada, código postal e localidade. Fica gravado como snapshot imutável no
+`Job` — mudar os dados de faturação do perfil depois não altera um trabalho
+já contratado. Os dados também ficam guardados no perfil do cliente para
+pré-preencher da próxima vez. O profissional vê estes dados na página do
+trabalho (precisa deles para emitir a fatura); a emissão da fatura em si
+(documento fiscal, série, comunicação à AT) não está implementada — isto só
+guarda a intenção e os dados.
+
 ### Extra: mapa "profissionais perto de ti"
 
 Página `/cliente/mapa` com Leaflet + OpenStreetMap (sem chave de API). O

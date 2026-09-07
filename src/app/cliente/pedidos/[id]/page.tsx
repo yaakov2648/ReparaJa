@@ -116,14 +116,23 @@ export default async function PedidoDetalhePage({
 
               {q.notes && <p className="mt-2 text-sm italic text-text-2">&ldquo;{q.notes}&rdquo;</p>}
 
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 space-y-2">
                 {q.status === "ENVIADO" && serviceRequest.status === "ABERTO" && (
-                  <QuoteActions quoteId={q.id} />
+                  <QuoteActions
+                    quoteId={q.id}
+                    defaultBilling={{
+                      billingName: user.billingName,
+                      billingNif: user.billingNif,
+                      billingAddress: user.billingAddress,
+                      billingPostalCode: user.billingPostalCode,
+                      billingCity: user.billingCity,
+                    }}
+                  />
                 )}
                 {conversationByProfessional.has(q.professionalId) && (
                   <Link
                     href={`/cliente/mensagens/${conversationByProfessional.get(q.professionalId)}`}
-                    className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold"
+                    className="inline-block rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold"
                   >
                     Conversar
                   </Link>

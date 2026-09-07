@@ -6,13 +6,24 @@ import { paymentService } from "@/lib/payments";
 import { toClientSafeJob } from "@/lib/serialize";
 import { getOrCreateConversation, insertSystemMessage } from "@/lib/conversations";
 import { formatEUR } from "@/lib/format";
+import { acceptQuoteSchema } from "@/lib/validation/billing";
 
-export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
+export async function POST(request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
   const session = await getSession();
   if (!session || session.role !== "CLIENTE") {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const { id: quoteId } = await ctx.params;
+
+  const rawBody = await request.json().catch(() => ({}));
+  const parsedBilling = acceptQuoteSchema.safeParse(rawBody ?? {});
+  if (!parsedBilling.success) {
+    return NextResponse.json(
+      { error: "validation_error", details: parsedBilling.error.flatten() },
+      { status: 400 }
+    );
+  }
+  const billing = parsedBilling.data;
 
   const quote = await prisma.quote.findUnique({
     where: { id: quoteId },
@@ -55,9 +66,30 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id
         commissionApplicableAmount: commission.applicableAmount,
         commissionAmount: commission.totalCommission,
         commissionBreakdown: commission.breakdown,
+        wantsInvoice: billing.wantsInvoice,
+        billingName: billing.wantsInvoice ? billing.billingName : null,
+        billingNif: billing.wantsInvoice ? billing.billingNif : null,
+        billingAddress: billing.wantsInvoice ? billing.billingAddress : null,
+        billingPostalCode: billing.wantsInvoice ? billing.billingPostalCode : null,
+        billingCity: billing.wantsInvoice ? billing.billingCity : null,
       },
     });
   });
+
+  // Guarda como sugestão para a próxima vez — o que fica válido para este
+  // trabalho é sempre o snapshot gravado no Job acima, nunca isto.
+  if (billing.wantsInvoice) {
+    await prisma.user.update({
+      where: { id: session.sub },
+      data: {
+        billingName: billing.billingName,
+        billingNif: billing.billingNif,
+        billingAddress: billing.billingAddress,
+        billingPostalCode: billing.billingPostalCode,
+        billingCity: billing.billingCity,
+      },
+    });
+  }
 
   // Cria já o "pagamento" (simulado) associado ao trabalho, para o cliente
   // poder avançar no ecrã — nada aqui move dinheiro real.

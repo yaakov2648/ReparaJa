@@ -32,6 +32,15 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Dados de faturação por omissão do cliente, para pré-preencher o pedido
+  // de fatura da próxima vez — o valor que conta de facto é sempre o
+  // snapshot gravado no Job no momento da contratação, nunca isto.
+  billingName       String?
+  billingNif        String?
+  billingAddress    String?
+  billingPostalCode String?
+  billingCity       String?
+
   professionalProfile ProfessionalProfile?
 
   requests         ServiceRequest[] @relation("ClientRequests")
@@ -230,6 +239,18 @@ model Job {
   commissionApplicableAmount Decimal @db.Decimal(12, 2)
   commissionAmount           Decimal @db.Decimal(12, 2)
   commissionBreakdown        Json
+
+  // Pedido de fatura do cliente, decidido no momento em que aceita o
+  // orçamento. Snapshot imutável — mudar os dados de faturação do perfil
+  // depois não altera um trabalho já contratado. A emissão da fatura em si
+  // (documento fiscal real) não está implementada; isto só guarda a
+  // intenção e os dados necessários para a emitir manualmente por agora.
+  wantsInvoice      Boolean @default(false)
+  billingName       String?
+  billingNif        String?
+  billingAddress    String?
+  billingPostalCode String?
+  billingCity       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
