@@ -1,0 +1,54 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { calculateCommission, getActiveCommissionTiers } from "@/lib/commission";
+
+export async function POST(_request: Request, ctx: RouteContext<"/api/quotes/[id]/accept">) {
+  const session = await getSession();
+  if (!session || session.role !== "CLIENTE") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  const { id: quoteId } = await ctx.params;
+
+  const quote = await prisma.quote.findUnique({
+    where: { id: quoteId },
+    include: { request: true },
+  });
+  if (!quote) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (quote.request.clientId !== session.sub) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (quote.status !== "ENVIADO" || quote.request.status !== "ABERTO") {
+    return NextResponse.json({ error: "quote_not_available" }, { status: 409 });
+  }
+
+  const tiers = await getActiveCommissionTiers();
+  // A comissão incide sobre o valor líquido do trabalho (subtotal - desconto),
+  // antes de IVA — nunca sobre o total pago pelo cliente.
+  const commission = calculateCommission(Number(quote.taxableBase), tiers);
+
+  const job = await prisma.$transaction(async (tx) => {
+    await tx.quote.update({ where: { id: quote.id }, data: { status: "ACEITE" } });
+    await tx.quote.updateMany({
+      where: { requestId: quote.requestId, id: { not: quote.id }, status: "ENVIADO" },
+      data: { status: "RECUSADO" },
+    });
+    await tx.serviceRequest.update({ where: { id: quote.requestId }, data: { status: "FECHADO" } });
+    return tx.job.create({
+      data: {
+        requestId: quote.requestId,
+        quoteId: quote.id,
+        clientId: quote.request.clientId,
+        professionalId: quote.professionalId,
+        agreedTotal: quote.total,
+        commissionApplicableAmount: commission.applicableAmount,
+        commissionAmount: commission.totalCommission,
+        commissionBreakdown: commission.breakdown,
+      },
+    });
+  });
+
+  return NextResponse.json({ job });
+}

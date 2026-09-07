@@ -1,6 +1,7 @@
 // Prisma schema — ReparaJá
 // Fase 1: utilizadores, autenticação e escalões de comissão.
-// As restantes entidades (jobs, quotes, payments, chat, disputes) entram nas fases seguintes.
+// Fase 2: pedidos, orçamentos com linhas e trabalhos contratados.
+// Pagamentos, chat e disputas entram nas fases seguintes.
 
 generator client {
   provider = "prisma-client"
@@ -29,6 +30,11 @@ model User {
   updatedAt    DateTime @updatedAt
 
   professionalProfile ProfessionalProfile?
+
+  requests         ServiceRequest[] @relation("ClientRequests")
+  quotes           Quote[]          @relation("ProfessionalQuotes")
+  jobsAsClient     Job[]            @relation("ClientJobs")
+  jobsAsProfessional Job[]          @relation("ProfessionalJobs")
 
   @@map("users")
 }
@@ -62,4 +68,154 @@ model CommissionTier {
   createdAt      DateTime  @default(now())
 
   @@map("commission_tiers")
+}
+
+enum ServiceCategory {
+  REMODELACAO
+  PINTURA
+  CANALIZACAO
+  ELETRICIDADE
+  CARPINTARIA
+  PAVIMENTO
+  COZINHA
+  CASA_BANHO
+  OUTRO
+}
+
+enum RequestTiming {
+  ESTA_SEMANA
+  PROXIMAS_DUAS_SEMANAS
+  ESTE_MES
+  SEM_URGENCIA
+}
+
+enum RequestStatus {
+  ABERTO
+  FECHADO
+  CANCELADO
+}
+
+// Pedido de orçamento publicado pelo cliente. Fica ABERTO a receber
+// orçamentos até o cliente aceitar um ou fechar/cancelar o pedido.
+model ServiceRequest {
+  id          String          @id @default(cuid())
+  clientId    String
+  client      User            @relation("ClientRequests", fields: [clientId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    ServiceCategory
+  location    String?
+  budgetMin   Decimal?        @db.Decimal(12, 2)
+  budgetMax   Decimal?        @db.Decimal(12, 2)
+  timing      RequestTiming   @default(SEM_URGENCIA)
+  status      RequestStatus   @default(ABERTO)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  quotes Quote[]
+  jobs   Job[]
+
+  @@map("service_requests")
+}
+
+// Tipo de linha de orçamento. Lista fixa pedida para permitir ao
+// profissional montar um orçamento por toques rápidos, sem escrever tudo.
+enum QuoteItemType {
+  MAO_DE_OBRA
+  DESLOCACAO
+  MATERIAIS
+  DEMOLICAO
+  PREPARACAO
+  INSTALACAO
+  TRANSPORTE
+  LIMPEZA
+  ALUGUER_EQUIPAMENTO
+  OUTRO
+}
+
+enum QuoteStatus {
+  ENVIADO
+  ACEITE
+  RECUSADO
+  EXPIRADO
+}
+
+// Orçamento enviado por um profissional para um pedido. Imutável depois de
+// enviado — uma alteração de preço gera um novo orçamento (histórico
+// completo fica sempre visível, nunca se substitui silenciosamente um valor).
+model Quote {
+  id             String      @id @default(cuid())
+  requestId      String
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User        @relation("ProfessionalQuotes", fields: [professionalId], references: [id], onDelete: Cascade)
+  notes          String?
+  discountAmount Decimal     @default(0) @db.Decimal(12, 2)
+  vatEnabled     Boolean     @default(false)
+  vatRate        Decimal?    @db.Decimal(5, 4)
+  subtotal       Decimal     @db.Decimal(12, 2)
+  taxableBase    Decimal     @db.Decimal(12, 2)
+  vatAmount      Decimal     @default(0) @db.Decimal(12, 2)
+  total          Decimal     @db.Decimal(12, 2)
+  validUntil     DateTime?
+  status         QuoteStatus @default(ENVIADO)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  items QuoteItem[]
+  job   Job?
+
+  @@index([requestId])
+  @@index([professionalId])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          String        @id @default(cuid())
+  quoteId     String
+  quote       Quote         @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  type        QuoteItemType
+  description String
+  quantity    Decimal       @db.Decimal(10, 2)
+  unit        String
+  unitPrice   Decimal       @db.Decimal(12, 2)
+  lineTotal   Decimal       @db.Decimal(12, 2)
+  position    Int           @default(0)
+
+  @@map("quote_items")
+}
+
+enum JobStatus {
+  AGUARDA_PAGAMENTO
+  EM_CURSO
+  CONCLUIDO
+  CANCELADO
+}
+
+// Trabalho contratado, criado quando o cliente aceita um orçamento.
+// Fica AGUARDA_PAGAMENTO até a Fase 3 (Stripe Connect) processar o
+// pagamento real — nada aqui deve sugerir que dinheiro já foi cobrado.
+model Job {
+  id             String    @id @default(cuid())
+  requestId      String
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  quoteId        String    @unique
+  quote          Quote     @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  clientId       String
+  client         User      @relation("ClientJobs", fields: [clientId], references: [id], onDelete: Restrict)
+  professionalId String
+  professional   User      @relation("ProfessionalJobs", fields: [professionalId], references: [id], onDelete: Restrict)
+  status         JobStatus @default(AGUARDA_PAGAMENTO)
+
+  // Snapshot financeiro no momento da contratação — nunca recalculado
+  // retroativamente se os escalões de comissão mudarem no futuro.
+  agreedTotal                Decimal @db.Decimal(12, 2)
+  commissionApplicableAmount Decimal @db.Decimal(12, 2)
+  commissionAmount           Decimal @db.Decimal(12, 2)
+  commissionBreakdown        Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("jobs")
 }

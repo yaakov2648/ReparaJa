@@ -26,8 +26,12 @@ aplicação real).
 - [x] Fase 1 — projeto Next.js, schema base (`User`, `ProfessionalProfile`,
       `CommissionTier`), autenticação própria (registo/login/logout/sessão),
       dashboards protegidas por papel.
-- [ ] Fase 2 — pedidos, orçamentos com linhas e motor de cálculo de comissão
-      progressiva.
+- [x] Fase 2 — pedidos, orçamentos com linhas e motor de cálculo de comissão
+      progressiva. Construtor de orçamento pensado para telemóvel: o
+      profissional toca numa categoria (Mão de obra, Materiais, Deslocação...)
+      para acrescentar logo a linha, preenche quantidade/preço e envia — sem
+      escrever tudo de raiz. Todos os totais (linha, subtotal, IVA, comissão)
+      são recalculados no servidor, nunca confiando no valor vindo do cliente.
 - [ ] Fase 3 — pagamentos via Stripe Connect (`PaymentService`).
 - [ ] Fase 4 — chat persistente com deteção de contactos externos.
 - [ ] Fase 5 — disputas, avaliações reais, "A Minha Casa", métricas.

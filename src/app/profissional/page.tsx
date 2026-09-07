@@ -1,8 +1,15 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/require-user";
+import { prisma } from "@/lib/prisma";
 import { Topbar } from "@/components/Topbar";
 
 export default async function ProfissionalDashboard() {
   const user = await requireUser("PROFISSIONAL");
+
+  const [openRequests, sentQuotes] = await Promise.all([
+    prisma.serviceRequest.count({ where: { status: "ABERTO" } }),
+    prisma.quote.count({ where: { professionalId: user.id } }),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -10,17 +17,23 @@ export default async function ProfissionalDashboard() {
       <main className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="text-2xl font-bold">Olá, {user.name.split(" ")[0]}</h1>
         <p className="mt-1 text-text-2">
-          A tua conta de profissional está criada. Verificação, pedidos novos,
-          orçamentos e comissão por escalões chegam nas próximas fases.
+          {openRequests} pedido{openRequests === 1 ? "" : "s"} aberto{openRequests === 1 ? "" : "s"} na
+          plataforma. Já enviaste {sentQuotes} orçamento{sentQuotes === 1 ? "" : "s"}.
         </p>
-        <div className="mt-8 rounded-2xl bg-surface p-6 shadow-sm">
-          <h2 className="font-semibold">Próximos passos</h2>
-          <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-text-2">
-            <li>Pedidos novos na tua zona</li>
-            <li>Criação de orçamentos com linhas detalhadas</li>
-            <li>Onboarding Stripe Connect para receber pagamentos</li>
-            <li>Comissão progressiva calculada automaticamente</li>
-          </ul>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/profissional/pedidos"
+            className="rounded-lg bg-orange px-5 py-2.5 font-semibold text-white"
+          >
+            Ver pedidos novos
+          </Link>
+          <Link
+            href="/profissional/orcamentos"
+            className="rounded-lg border border-border bg-surface px-5 py-2.5 font-semibold"
+          >
+            Os teus orçamentos
+          </Link>
         </div>
       </main>
     </div>
