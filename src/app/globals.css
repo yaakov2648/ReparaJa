@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Ativa a variante `dark:` por classe (.dark no <html>) em vez de depender
+   só do prefers-color-scheme do sistema — precisamos disto para o toggle
+   manual persistir a escolha do utilizador. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f4f6fa;
+  --foreground: #14213d;
+  --navy: #16294f;
+  --navy-2: #1e3461;
+  --navy-3: #0e1e3a;
+  --orange: #ff6b1a;
+  --orange-soft: #ffe8d9;
+  --surface: #ffffff;
+  --border: #e3e8f0;
+  --text-2: #5c6b85;
+  --green: #1fa971;
+  --red: #e04040;
+}
+
+:root.dark {
+  --background: #0b1322;
+  --foreground: #e8edf6;
+  --navy: #0b1322;
+  --navy-2: #15213a;
+  --navy-3: #0a1020;
+  --orange-soft: rgba(255, 107, 26, 0.16);
+  --surface: #141f36;
+  --border: #26334e;
+  --text-2: #9fb0cc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-navy-3: var(--navy-3);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text-2: var(--text-2);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
