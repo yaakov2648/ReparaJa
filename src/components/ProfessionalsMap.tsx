@@ -142,23 +142,23 @@ export function ProfessionalsMap() {
 
   return (
     <div>
-      <form onSubmit={handleSearch} className="mb-3 flex gap-2">
+      <form onSubmit={handleSearch} className="mb-3 flex flex-wrap gap-2">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Pesquisar zona (ex: Lamego)"
-          className="flex-1 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-orange"
+          className="min-w-0 flex-1 basis-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-orange sm:basis-auto"
         />
         <button
           type="submit"
-          className="rounded-lg bg-orange px-4 py-2 text-sm font-semibold text-white"
+          className="flex-1 rounded-lg bg-orange px-4 py-2 text-sm font-semibold text-white sm:flex-none"
         >
           Procurar
         </button>
         <button
           type="button"
           onClick={useMyLocation}
-          className="whitespace-nowrap rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold"
+          className="flex-1 whitespace-nowrap rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold sm:flex-none"
         >
           A minha localização
         </button>
